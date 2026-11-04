@@ -1,12 +1,15 @@
 import { app, BrowserWindow, dialog, ipcMain, safeStorage } from "electron";
-import { join, basename, extname } from "node:path";
+import { join, basename, extname, dirname } from "node:path";
+import { createRequire } from "node:module";
 import { promises as fs } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { parseFile } from "music-metadata";
 import NodeID3 from "node-id3";
+const require = createRequire(import.meta.url);
 const id3 = require("node-id3") as typeof NodeID3;
 const BACKUP_DIR = ".mp3-tag-editor-backups";
 const MAX_INLINE_BYTES = 14 * 1024 * 1024;
+const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"];
 
 type TrackTags = {
   title: string; artist: string; album: string; albumArtist: string;
@@ -69,7 +72,7 @@ async function scanMp3(folder: string): Promise<string[]> {
 
 ipcMain.handle("library:scan", async (_event, folder: string) => scanMp3(folder));
 ipcMain.handle("library:read", async (_event, filePath: string) => {
-  const metadata = await parseFile(filePath, { skipCovers: true });
+  const metadata = await parseFile(filePath);
   const common = metadata.common;
   return {
     path: filePath, name: basename(filePath), duration: metadata.format.duration ?? 0,
@@ -80,7 +83,8 @@ ipcMain.handle("library:read", async (_event, filePath: string) => {
       genre: common.genre?.join(", ") ?? "", year: common.year?.toString() ?? "",
       track: common.track.no?.toString() ?? "", composer: common.composer?.join(", ") ?? "",
       comment: common.comment?.map(x => x.text).join("\n") ?? ""
-    } satisfies TrackTags
+    } satisfies TrackTags,
+    coverDataUrl: common.picture?.[0] ? `data:${common.picture[0].format};base64,${common.picture[0].data.toString("base64")}` : null
   };
 });
 
@@ -136,9 +140,61 @@ ipcMain.handle("ai:analyze", async (_event, input: { path: string; tags: TrackTa
   return { ...emptyTags(), ...Object.fromEntries(Object.entries(parsed).map(([k, v]) => [k, String(v ?? "")])) };
 });
 
+
+ipcMain.handle("artwork:search", async (_event, input: { artist: string; album: string; title: string }) => {
+  const term = [input.artist, input.album || input.title].filter(Boolean).join(" ").trim();
+  if (!term) throw new Error("Cần có Artist hoặc Album để tìm ảnh bìa.");
+  const url = new URL("https://itunes.apple.com/search");
+  url.searchParams.set("term", term);
+  url.searchParams.set("entity", "album");
+  url.searchParams.set("limit", "12");
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Không tìm được ảnh bìa (HTTP ${response.status}).`);
+  const body = await response.json() as { results?: Array<{ collectionName?: string; artistName?: string; artworkUrl100?: string; collectionViewUrl?: string }> };
+  return (body.results ?? []).filter(x => x.artworkUrl100).map(x => ({
+    album: x.collectionName ?? "",
+    artist: x.artistName ?? "",
+    url: (x.artworkUrl100 ?? "").replace(/100x100bb\.(jpg|png)$/i, "600x600bb.$1"),
+    storeUrl: x.collectionViewUrl ?? ""
+  }));
+});
+
+ipcMain.handle("dialog:image", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters: [{ name: "Album artwork", extensions: IMAGE_EXTENSIONS }]
+  });
+  if (result.canceled || !result.filePaths[0]) return null;
+  const path = result.filePaths[0];
+  const extension = extname(path).toLowerCase();
+  const mime = extension === ".png" ? "image/png" : "image/jpeg";
+  const data = await fs.readFile(path);
+  return `data:${mime};base64,${data.toString("base64")}`;
+});
+
+ipcMain.handle("artwork:embed", async (_event, input: { path: string; imageDataUrl: string }) => {
+  const match = input.imageDataUrl.match(/^data:(image\/(?:jpeg|png));base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) throw new Error("Ảnh bìa phải là JPEG hoặc PNG hợp lệ.");
+  const imageBuffer = Buffer.from(match[2], "base64");
+  if (imageBuffer.byteLength > 10 * 1024 * 1024) throw new Error("Ảnh bìa vượt quá giới hạn 10 MB.");
+  const original = await fs.readFile(input.path);
+  const backupDir = join(dirname(input.path), BACKUP_DIR);
+  await fs.mkdir(backupDir, { recursive: true });
+  const backupPath = join(backupDir, `${basename(input.path)}.${Date.now()}.${randomUUID()}.bak`);
+  await fs.writeFile(backupPath, original, { flag: "wx" });
+  const result = id3.update({
+    image: { mime: match[1], type: { id: 3, name: "front cover" }, description: "Album cover", imageBuffer }
+  }, input.path);
+  if (!result) {
+    await fs.copyFile(backupPath, input.path);
+    throw new Error("Không thể nhúng ảnh bìa. File đã được khôi phục từ backup.");
+  }
+  return { backupPath };
+});
+
 ipcMain.handle("tags:write", async (_event, payload: { path: string; tags: TrackTags }) => {
   const original = await fs.readFile(payload.path);
-  const backupDir = join(require("node:path").dirname(payload.path), BACKUP_DIR);
+  const backupDir = join(dirname(payload.path), BACKUP_DIR);
   await fs.mkdir(backupDir, { recursive: true });
   const backupPath = join(backupDir, `${basename(payload.path)}.${Date.now()}.${randomUUID()}.bak`);
   await fs.writeFile(backupPath, original, { flag: "wx" });
