@@ -96,7 +96,7 @@ ipcMain.handle("library:scan", async (_event, folder: string) => scanMp3(folder)
 ipcMain.handle("library:read", async (_event, filePath: string) => {
   const metadata = await parseFile(filePath);
   const common = metadata.common;
-  const id3Tags = id3.read(filePath) as unknown as {
+  const id3Tags = (id3.read(filePath) ?? {}) as unknown as {
     unsynchronisedLyrics?: { text?: string };
     synchronisedLyrics?: Array<{ synchronisedText?: Array<{ text: string; timestamp: number }> }>;
   };
