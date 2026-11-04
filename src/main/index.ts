@@ -190,9 +190,24 @@ ipcMain.handle("dialog:image", async () => {
 });
 
 ipcMain.handle("artwork:embed", async (_event, input: { path: string; imageDataUrl: string }) => {
-  const match = input.imageDataUrl.match(/^data:(image\/(?:jpeg|png));base64,([A-Za-z0-9+/=]+)$/);
-  if (!match) throw new Error("Ảnh bìa phải là JPEG hoặc PNG hợp lệ.");
-  const imageBuffer = Buffer.from(match[2], "base64");
+  let mime: string;
+  let imageBuffer: Buffer;
+  if (input.imageDataUrl.startsWith("data:")) {
+    const match = input.imageDataUrl.match(/^data:(image\\/(?:jpeg|png));base64,([A-Za-z0-9+/=]+)$/);
+    if (!match) throw new Error("Ảnh bìa phải là JPEG hoặc PNG hợp lệ.");
+    mime = match[1];
+    imageBuffer = Buffer.from(match[2], "base64");
+  } else {
+    const artworkUrl = new URL(input.imageDataUrl);
+    if (artworkUrl.protocol !== "https:" || artworkUrl.hostname !== "coverartarchive.org") {
+      throw new Error("Nguồn ảnh bìa không được hỗ trợ.");
+    }
+    const response = await fetch(artworkUrl);
+    if (!response.ok) throw new Error(`Không tải được ảnh bìa (HTTP ${response.status}).`);
+    mime = response.headers.get("content-type")?.split(";")[0] ?? "";
+    if (mime !== "image/jpeg" && mime !== "image/png") throw new Error("Nguồn ảnh không trả về JPEG hoặc PNG.");
+    imageBuffer = Buffer.from(await response.arrayBuffer());
+  }
   if (imageBuffer.byteLength > 10 * 1024 * 1024) throw new Error("Ảnh bìa vượt quá giới hạn 10 MB.");
   const original = await fs.readFile(input.path);
   const backupDir = join(dirname(input.path), BACKUP_DIR);
@@ -200,7 +215,7 @@ ipcMain.handle("artwork:embed", async (_event, input: { path: string; imageDataU
   const backupPath = join(backupDir, `${basename(input.path)}.${Date.now()}.${randomUUID()}.bak`);
   await fs.writeFile(backupPath, original, { flag: "wx" });
   const result = id3.update({
-    image: { mime: match[1], type: { id: 3, name: "front cover" }, description: "Album cover", imageBuffer }
+    image: { mime, type: { id: 3, name: "front cover" }, description: "Album cover", imageBuffer }
   }, input.path);
   if (!result) {
     await fs.copyFile(backupPath, input.path);
@@ -208,7 +223,6 @@ ipcMain.handle("artwork:embed", async (_event, input: { path: string; imageDataU
   }
   return { backupPath };
 });
-
 ipcMain.handle("tags:write", async (_event, payload: { path: string; tags: TrackTags }) => {
   const original = await fs.readFile(payload.path);
   const backupDir = join(dirname(payload.path), BACKUP_DIR);
