@@ -8,6 +8,7 @@ const api = {
   readFile: (path: string) => ipcRenderer.invoke("library:read", path),
   getSettings: () => ipcRenderer.invoke("settings:get"),
   searchArtwork: (input: { artist: string; album: string; title: string }) => ipcRenderer.invoke("artwork:search", input),
+  findLyrics: (input: { title: string; artist: string; album: string; duration: number }) => ipcRenderer.invoke("lyrics:search", input),
   embedArtwork: (input: { path: string; imageDataUrl: string }) => ipcRenderer.invoke("artwork:embed", input),
   saveApiKey: (key: string) => ipcRenderer.invoke("settings:save", key),
   analyze: (input: { path: string; tags: Record<string, string>; useAudio: boolean; model: string }) =>
