@@ -73,7 +73,7 @@ function toLrc(entries: Array<{ text: string; timestamp: number }>): string {
     const minutes = Math.floor(total / 60000);
     const seconds = Math.floor((total % 60000) / 1000);
     const centiseconds = Math.floor((total % 1000) / 10);
-    return \`[\${String(minutes).padStart(2, "0")}:\${String(seconds).padStart(2, "0")}.\${String(centiseconds).padStart(2, "0")}]\${text}\`;
+    return "[" + String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0") + "." + String(centiseconds).padStart(2, "0") + "]" + text;
   }).join("\n");
 }
 
@@ -263,6 +263,9 @@ ipcMain.handle("tags:write", async (_event, payload: { path: string; tags: Track
 
   const tags = payload.tags;
   const syncedEntries = parseLrc(payload.syncedLyrics);
+  if (payload.syncedLyrics.trim() && syncedEntries.length === 0) {
+    throw new Error("LRC không hợp lệ. Mỗi dòng cần có timestamp dạng [mm:ss.xx] và nội dung lời.");
+  }
   const plainLyrics = payload.lyrics.trim() || syncedEntries.map(item => item.text).join("\n");
   const result = id3.update({
     title: tags.title || undefined, artist: tags.artist || undefined,
