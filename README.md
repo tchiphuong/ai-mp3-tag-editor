@@ -32,7 +32,7 @@
 
 ### Album artwork
 
-- Tìm ảnh bìa theo Artist và Album thông qua Apple iTunes Search API.
+- Tìm ảnh bìa theo Artist và Album thông qua MusicBrainz API và Cover Art Archive.
 - Hiển thị danh sách ảnh tìm được để người dùng chọn.
 - Cho phép chọn ảnh JPEG hoặc PNG từ máy tính.
 - Preview ảnh trước khi nhúng.
@@ -55,7 +55,7 @@
 | MP3 metadata | music-metadata |
 | ID3 writer | node-id3 |
 | AI | Google Gemini Interactions API |
-| Album artwork search | Apple iTunes Search API |
+| Album artwork search | MusicBrainz API và Cover Art Archive |
 
 ## Yêu cầu
 
@@ -122,7 +122,7 @@ Lấy API Key tại [Google AI Studio](https://aistudio.google.com/apikey).
 5. Chọn **AI suggest** hoặc **AI fill all**.
 6. Kiểm tra và chỉnh sửa các trường metadata được đề xuất.
 7. Chọn **Save tags** để ghi ID3 vào MP3.
-8. Trong phần **Album artwork**, chọn **Find cover** để tìm ảnh từ iTunes hoặc **Choose image** để dùng ảnh local.
+8. Trong phần **Album artwork**, chọn **Find cover** để tìm ảnh từ MusicBrainz/Cover Art Archive hoặc **Choose image** để dùng ảnh local.
 9. Chọn ảnh phù hợp, xem preview và nhấn **Embed cover**.
 10. Dùng **Restore backup** nếu cần khôi phục file trước khi chỉnh sửa.
 
@@ -131,19 +131,20 @@ Lấy API Key tại [Google AI Studio](https://aistudio.google.com/apikey).
 - MP3 được đọc và chỉnh sửa trực tiếp trên ổ đĩa local bằng Electron main process.
 - Khi **Analyze audio** được bật, dữ liệu audio được gửi tới Google Gemini API. Không có backend trung gian do dự án vận hành.
 - Khi **Analyze audio** tắt, ứng dụng chỉ gửi tên file và metadata hiện có để Gemini đề xuất thông tin.
-- Tìm ảnh bìa sử dụng Apple iTunes Search API; request tìm kiếm chứa thông tin Artist/Album. Ảnh được tải về khi người dùng chọn nhúng.
+- Tìm ảnh bìa sử dụng MusicBrainz và Cover Art Archive; request tìm kiếm chứa thông tin Artist/Album. Ảnh được tải về khi người dùng chọn nhúng.
 - Gemini API Key được lưu mã hóa bằng Electron `safeStorage` trong dữ liệu ứng dụng Windows.
 - Backup được lưu cạnh file MP3 trong thư mục ẩn `.mp3-tag-editor-backups`.
 
 ## Giới hạn hiện tại
 
 - Phân tích audio inline hiện giới hạn file dưới 14 MB để chừa dung lượng cho phần prompt và payload request. Hỗ trợ Files API cho file lớn sẽ được bổ sung sau.
-- Ảnh bìa tìm kiếm phụ thuộc kết quả Apple iTunes Store; một số album hoặc bản phát hành khu vực có thể không có kết quả.
+- Ảnh bìa tìm kiếm phụ thuộc kết quả MusicBrainz/Cover Art Archive; một số album hoặc bản phát hành khu vực có thể không có kết quả.
 - Gemini có thể đề xuất sai bài hát hoặc metadata. Luôn kiểm tra trước khi lưu.
 - Ứng dụng hiện tập trung vào MP3 và ID3; chưa hỗ trợ ghi metadata cho FLAC, WAV hoặc M4A.
 
 ## Tài liệu tham khảo
 
 - [Gemini API – Audio understanding](https://ai.google.dev/gemini-api/docs/audio)
-- [Apple – iTunes Search API](https://performance-partners.apple.com/search-api)
+- [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API)
+- [Cover Art Archive API](https://musicbrainz.org/doc/Cover_Art_Archive/API)
 - [Electron – safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage)
