@@ -89,10 +89,8 @@ ipcMain.handle("library:read", async (_event, filePath: string) => {
 
 ipcMain.handle("settings:get", async () => {
   const path = join(app.getPath("userData"), "gemini-key.bin");
-  try {
-    const encrypted = await fs.readFile(path);
-    return { configured: true, key: safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(encrypted) : "" };
-  } catch { return { configured: false, key: "" }; }
+  try { await fs.access(path); return { configured: true }; }
+  catch { return { configured: false }; }
 });
 ipcMain.handle("settings:save", async (_event, key: string) => {
   if (!key.trim()) throw new Error("API key không được để trống.");
