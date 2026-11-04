@@ -53,6 +53,30 @@ ipcMain.handle("dialog:files", async () => {
   return result.canceled ? [] : result.filePaths;
 });
 
+function parseLrc(lrc: string): Array<{ text: string; timestamp: number }> {
+  const entries: Array<{ text: string; timestamp: number }> = [];
+  for (const line of lrc.split(/\\r?\\n/)) {
+    const match = line.match(/^\\[(\\d{1,2}):(\\d{2})(?:[.:](\\d{1,3}))?\\](.*)$/);
+    if (!match) continue;
+    const fraction = match[3] ?? "0";
+    const milliseconds = fraction.length === 1 ? Number(fraction) * 100 : fraction.length === 2 ? Number(fraction) * 10 : Number(fraction);
+    const timestamp = (Number(match[1]) * 60 + Number(match[2])) * 1000 + milliseconds;
+    const text = match[4].trim();
+    if (text) entries.push({ text, timestamp });
+  }
+  return entries.sort((a, b) => a.timestamp - b.timestamp);
+}
+
+function toLrc(entries: Array<{ text: string; timestamp: number }>): string {
+  return entries.map(({ text, timestamp }) => {
+    const total = Math.max(0, Math.floor(timestamp));
+    const minutes = Math.floor(total / 60000);
+    const seconds = Math.floor((total % 60000) / 1000);
+    const centiseconds = Math.floor((total % 1000) / 10);
+    return `[${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(centiseconds).padStart(2, "0")}]${text}`;
+  }).join("\\n");
+}
+
 async function scanMp3(folder: string): Promise<string[]> {
   const found: string[] = [];
   async function walk(dir: string): Promise<void> {
@@ -72,8 +96,15 @@ ipcMain.handle("library:scan", async (_event, folder: string) => scanMp3(folder)
 ipcMain.handle("library:read", async (_event, filePath: string) => {
   const metadata = await parseFile(filePath);
   const common = metadata.common;
+  const id3Tags = id3.read(filePath) as unknown as {
+    unsynchronisedLyrics?: { text?: string };
+    synchronisedLyrics?: Array<{ synchronisedText?: Array<{ text: string; timestamp: number }> }>;
+  };
+  const syncedEntries = id3Tags.synchronisedLyrics?.flatMap(frame => frame.synchronisedText ?? []) ?? [];
   return {
     path: filePath, name: basename(filePath), duration: metadata.format.duration ?? 0,
+    lyrics: id3Tags.unsynchronisedLyrics?.text ?? "",
+    syncedLyrics: toLrc(syncedEntries),
     size: (await fs.stat(filePath)).size,
     tags: {
       title: common.title ?? "", artist: common.artist ?? "",
@@ -223,7 +254,7 @@ ipcMain.handle("artwork:embed", async (_event, input: { path: string; imageDataU
   }
   return { backupPath };
 });
-ipcMain.handle("tags:write", async (_event, payload: { path: string; tags: TrackTags }) => {
+ipcMain.handle("tags:write", async (_event, payload: { path: string; tags: TrackTags; lyrics: string; syncedLyrics: string }) => {
   const original = await fs.readFile(payload.path);
   const backupDir = join(dirname(payload.path), BACKUP_DIR);
   await fs.mkdir(backupDir, { recursive: true });
@@ -231,18 +262,34 @@ ipcMain.handle("tags:write", async (_event, payload: { path: string; tags: Track
   await fs.writeFile(backupPath, original, { flag: "wx" });
 
   const tags = payload.tags;
+  const syncedEntries = parseLrc(payload.syncedLyrics);
+  const plainLyrics = payload.lyrics.trim() || syncedEntries.map(item => item.text).join("\\n");
   const result = id3.update({
     title: tags.title || undefined, artist: tags.artist || undefined,
     album: tags.album || undefined, performerInfo: tags.albumArtist || undefined,
     genre: tags.genre || undefined, year: tags.year || undefined,
     trackNumber: tags.track || undefined, composer: tags.composer || undefined,
-    comment: tags.comment ? { language: "eng", text: tags.comment } : undefined
+    comment: tags.comment ? { language: "eng", text: tags.comment } : undefined,
+    unsynchronisedLyrics: plainLyrics ? { language: "vie", text: plainLyrics } : undefined,
+    synchronisedLyrics: syncedEntries.length ? [{
+      language: "vie", timeStampFormat: 2, contentType: 1,
+      synchronisedText: syncedEntries
+    }] : undefined
   }, payload.path);
   if (!result) {
     await fs.copyFile(backupPath, payload.path);
     throw new Error("Không thể ghi ID3 tag. File đã được khôi phục từ backup.");
   }
-  return { backupPath };
+  let lrcPath: string | undefined;
+  if (payload.syncedLyrics.trim()) {
+    lrcPath = payload.path.replace(/\\.mp3$/i, ".lrc");
+    try {
+      const previousLrc = await fs.readFile(lrcPath);
+      await fs.writeFile(`${lrcPath}.${Date.now()}.bak`, previousLrc, { flag: "wx" });
+    } catch { /* No previous sidecar file. */ }
+    await fs.writeFile(lrcPath, payload.syncedLyrics.trim() + "\\n", "utf8");
+  }
+  return { backupPath, lrcPath };
 });
 
 ipcMain.handle("tags:restore", async (_event, backupPath: string, targetPath: string) => {
