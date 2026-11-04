@@ -14,7 +14,7 @@ declare global {
       chooseFiles(): Promise<string[]>;
       scanFolder(folder: string): Promise<string[]>;
       readFile(path: string): Promise<Omit<Track, "status">>;
-      getSettings(): Promise<{ configured: boolean; key: string }>;
+      getSettings(): Promise<{ configured: boolean }>;
       saveApiKey(key: string): Promise<boolean>;
       analyze(input: { path: string; tags: Tags; useAudio: boolean; model: string }): Promise<Tags>;
       writeTags(input: { path: string; tags: Tags }): Promise<{ backupPath: string }>;
