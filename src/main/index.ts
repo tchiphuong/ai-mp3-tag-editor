@@ -64,7 +64,7 @@ function parseLrc(lrc: string): Array<{ text: string; timeStamp: number }> {
     const text = match[4].trim();
     if (text) entries.push({ text, timeStamp: timestamp });
   }
-  return entries.sort((a, b) => a.timestamp - b.timestamp);
+  return entries.sort((a, b) => a.timeStamp - b.timeStamp);
 }
 
 function toLrc(entries: Array<{ text: string; timeStamp: number }>): string {
