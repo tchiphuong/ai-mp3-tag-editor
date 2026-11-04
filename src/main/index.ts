@@ -84,7 +84,7 @@ ipcMain.handle("library:read", async (_event, filePath: string) => {
       track: common.track.no?.toString() ?? "", composer: common.composer?.join(", ") ?? "",
       comment: common.comment?.map(x => x.text).join("\n") ?? ""
     } satisfies TrackTags,
-    coverDataUrl: common.picture?.[0] ? `data:${common.picture[0].format};base64,${common.picture[0].data.toString("base64")}` : null
+    coverDataUrl: common.picture?.[0] ? `data:${common.picture[0].format};base64,${Buffer.from(common.picture[0].data).toString("base64")}` : null
   };
 });
 
