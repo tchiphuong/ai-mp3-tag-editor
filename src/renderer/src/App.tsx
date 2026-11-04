@@ -24,7 +24,7 @@ export default function App() {
   const [configured, setConfigured] = useState(false);
   const [notice, setNotice] = useState("");
 
-  useEffect(() => { window.desktop.getSettings().then(s => { setConfigured(s.configured); setApiKey(s.key); }).catch(e => setNotice(errorText(e))); }, []);
+  useEffect(() => { window.desktop.getSettings().then(s => setConfigured(s.configured)).catch(e => setNotice(errorText(e))); }, []);
   const active = tracks.find(t => t.path === selected) ?? tracks[0] ?? null;
   const visible = useMemo(() => tracks.filter(t => t.name.toLowerCase().includes(query.toLowerCase()) || t.tags.title.toLowerCase().includes(query.toLowerCase())), [tracks, query]);
   const updateTrack = (path: string, update: Partial<Track>) => setTracks(old => old.map(t => t.path === path ? { ...t, ...update } : t));
