@@ -20,3 +20,17 @@ button,input,textarea{font:inherit}button{cursor:pointer}.sidebar{width:238px;fl
 .artwork-option.chosen{border-color:#8a70f0;background:#211d42}
 .artwork-option>img{width:43px;height:43px;object-fit:cover;border-radius:5px;flex-shrink:0}
 .artwork-option>span{min-width:0;flex:1}.artwork-option b,.artwork-option small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.artwork-option b{font-size:9px}.artwork-option small{font-size:8px;color:#8290ad;margin-top:4px}.artwork-option>svg{color:#a995ff;flex-shrink:0}
+
+.folders-label{margin-top:27px}
+.saved-folders{display:flex;flex-direction:column;gap:4px;max-height:38vh;overflow:auto}
+.saved-folder{display:flex;align-items:center;gap:3px;min-width:0}
+.saved-folder>button:first-child{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:transparent;color:#9eabc5;padding:9px 10px;border-radius:7px;text-align:left;font-size:11px}
+.saved-folder>button:first-child:hover{background:#18243c;color:#fff}
+.saved-folder>button:first-child span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.remove-folder{border:0;background:transparent;color:#65728e;padding:7px;border-radius:6px;opacity:.65}
+.remove-folder:hover{background:#382433;color:#ff9a9a;opacity:1}
+.no-folders{padding:4px 10px;color:#687590;font-size:10px}
+.lyrics-section{margin-top:20px;padding-top:16px;border-top:1px solid #28334c;display:flex;flex-direction:column;gap:12px}
+.lyrics-section .metadata-heading{margin:0}
+.lyrics-section textarea{line-height:1.55;font-family:'DM Sans',sans-serif}
+.lyrics-hint{font-size:9px;line-height:1.5;color:#7886a2}
