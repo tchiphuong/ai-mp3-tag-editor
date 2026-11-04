@@ -127,7 +127,7 @@ Lấy API Key tại [Google AI Studio](https://aistudio.google.com/apikey).
 ## Quy trình sử dụng
 
 1. Mở ứng dụng và cấu hình Gemini API Key trong Settings.
-2. Chọn **Choose folder** hoặc **Add MP3 files**.
+2. Chọn **Add folder** để lưu thư mục nhạc vào Library hoặc **Add MP3 files** để thêm từng file riêng lẻ.
 3. Chọn bài hát trong danh sách.
 4. Bật **Analyze audio** nếu muốn gửi nội dung âm thanh cho Gemini. Tắt tùy chọn này nếu chỉ muốn phân tích tên file và tag hiện có.
 5. Chọn **AI suggest** hoặc **AI fill all**.
