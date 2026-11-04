@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AudioLines, FolderOpen, FileAudio, Sparkles, Save, Settings, Search, RefreshCw, CheckCircle2, AlertCircle, Music2, X, KeyRound, WandSparkles, ImagePlus, Disc3, ExternalLink } from "lucide-react";
+import { AudioLines, FolderOpen, FileAudio, Sparkles, Save, Settings, Search, RefreshCw, CheckCircle2, AlertCircle, Music2, X, KeyRound, WandSparkles, ImagePlus, Disc3 } from "lucide-react";
 import type { ArtworkCandidate, Tags, Track } from "./types";
 
 const fields: Array<[keyof Tags, string]> = [
