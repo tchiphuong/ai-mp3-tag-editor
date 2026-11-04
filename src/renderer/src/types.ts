@@ -22,6 +22,7 @@ declare global {
       getSettings(): Promise<{ configured: boolean }>;
       saveApiKey(key: string): Promise<boolean>;
       searchArtwork(input: { artist: string; album: string; title: string }): Promise<ArtworkCandidate[]>;
+      findLyrics(input: { title: string; artist: string; album: string; duration: number }): Promise<{ lyrics: string; syncedLyrics: string }>;
       embedArtwork(input: { path: string; imageDataUrl: string }): Promise<{ backupPath: string }>;
       analyze(input: { path: string; tags: Tags; useAudio: boolean; model: string }): Promise<Tags>;
       writeTags(input: { path: string; tags: Tags; lyrics: string; syncedLyrics: string }): Promise<{ backupPath: string; lrcPath?: string }>;
