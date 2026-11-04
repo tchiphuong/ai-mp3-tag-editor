@@ -12,7 +12,7 @@ const api = {
   saveApiKey: (key: string) => ipcRenderer.invoke("settings:save", key),
   analyze: (input: { path: string; tags: Record<string, string>; useAudio: boolean; model: string }) =>
     ipcRenderer.invoke("ai:analyze", input),
-  writeTags: (input: { path: string; tags: Record<string, string> }) =>
+  writeTags: (input: { path: string; tags: Record<string, string>; lyrics: string; syncedLyrics: string }) =>
     ipcRenderer.invoke("tags:write", input),
   restoreBackup: (backupPath: string, targetPath: string) =>
     ipcRenderer.invoke("tags:restore", backupPath, targetPath)
