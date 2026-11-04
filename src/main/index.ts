@@ -140,21 +140,40 @@ ipcMain.handle("ai:analyze", async (_event, input: { path: string; tags: TrackTa
 
 
 ipcMain.handle("artwork:search", async (_event, input: { artist: string; album: string; title: string }) => {
-  const term = [input.artist, input.album || input.title].filter(Boolean).join(" ").trim();
-  if (!term) throw new Error("Cần có Artist hoặc Album để tìm ảnh bìa.");
-  const url = new URL("https://itunes.apple.com/search");
-  url.searchParams.set("term", term);
-  url.searchParams.set("entity", "album");
-  url.searchParams.set("limit", "12");
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Không tìm được ảnh bìa (HTTP ${response.status}).`);
-  const body = await response.json() as { results?: Array<{ collectionName?: string; artistName?: string; artworkUrl100?: string; collectionViewUrl?: string }> };
-  return (body.results ?? []).filter(x => x.artworkUrl100).map(x => ({
-    album: x.collectionName ?? "",
-    artist: x.artistName ?? "",
-    url: (x.artworkUrl100 ?? "").replace(/100x100bb\.(jpg|png)$/i, "600x600bb.$1"),
-    storeUrl: x.collectionViewUrl ?? ""
+  const artist = input.artist.trim();
+  const album = (input.album || input.title).trim();
+  if (!artist && !album) throw new Error("Cần có Artist hoặc Album để tìm ảnh bìa.");
+
+  const escapeLucene = (value: string) => value.replace(/\\\\/g, "\\\\\\\\").replace(/"/g, '\\\\"');
+  const terms = [album ? `release:"${escapeLucene(album)}"` : "", artist ? `artist:"${escapeLucene(artist)}"` : ""].filter(Boolean);
+  const searchUrl = new URL("https://musicbrainz.org/ws/2/release/");
+  searchUrl.searchParams.set("query", terms.join(" AND "));
+  searchUrl.searchParams.set("fmt", "json");
+  searchUrl.searchParams.set("limit", "8");
+
+  const headers = { "User-Agent": "AI-MP3-Tag-Editor/0.1.0 (https://github.com/tchiphuong/ai-mp3-tag-editor)" };
+  const response = await fetch(searchUrl, { headers });
+  if (!response.ok) throw new Error(`MusicBrainz search failed (HTTP ${response.status}).`);
+  const body = await response.json() as { releases?: Array<{ id: string; title: string; date?: string; "artist-credit"?: Array<{ name?: string }> }> };
+  const releases = body.releases ?? [];
+
+  const candidates = await Promise.all(releases.map(async release => {
+    try {
+      const coverResponse = await fetch(`https://coverartarchive.org/release/${release.id}`, { headers: { Accept: "application/json" } });
+      if (!coverResponse.ok) return null;
+      const cover = await coverResponse.json() as { images?: Array<{ front?: boolean; image?: string; thumbnails?: { "500"?: string; large?: string } }> };
+      const image = cover.images?.find(item => item.front) ?? cover.images?.[0];
+      const imageUrl = image?.thumbnails?.["500"] ?? image?.thumbnails?.large ?? image?.image;
+      if (!imageUrl) return null;
+      return {
+        album: release.title,
+        artist: release["artist-credit"]?.map(item => item.name).filter(Boolean).join("") ?? artist,
+        url: imageUrl,
+        storeUrl: `https://musicbrainz.org/release/${release.id}`
+      };
+    } catch { return null; }
   }));
+  return candidates.filter((item): item is NonNullable<typeof item> => item !== null);
 });
 
 ipcMain.handle("dialog:image", async () => {
