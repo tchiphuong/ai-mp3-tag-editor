@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AudioLines, FolderOpen, FileAudio, Sparkles, Save, Settings, Search, RefreshCw, CheckCircle2, AlertCircle, Music2, X, KeyRound, WandSparkles, ImagePlus, Disc3, Trash2 } from "lucide-react";
+import { AudioLines, FolderOpen, FileAudio, Sparkles, Save, Settings, Search, RefreshCw, CheckCircle2, AlertCircle, Music2, X, KeyRound, WandSparkles, ImagePlus, Disc3, Trash2, BookOpenText } from "lucide-react";
 import type { ArtworkCandidate, Tags, Track } from "./types";
 
 const fields: Array<[keyof Tags, string]> = [
@@ -68,6 +68,22 @@ export default function App() {
   const editLyrics = (key: "lyrics" | "syncedLyrics", value: string) => {
     if (!active) return;
     updateTrack(active.path, { [key]: value });
+  };
+  const findLyrics = async () => {
+    if (!active) return;
+    const tags = active.suggested ?? active.tags;
+    setBusy(true); setNotice("");
+    try {
+      const result = await window.desktop.findLyrics({
+        title: tags.title, artist: tags.artist, album: tags.album, duration: active.duration
+      });
+      updateTrack(active.path, { lyrics: result.lyrics, syncedLyrics: result.syncedLyrics });
+      setNotice("Đã tìm thấy lời bài hát từ LRCLIB. Kiểm tra rồi nhấn Save tags.");
+    } catch (e) {
+      setNotice(errorText(e));
+    } finally {
+      setBusy(false);
+    }
   };
   useEffect(() => {
     const raw = localStorage.getItem("music-library-folders");
@@ -229,7 +245,7 @@ export default function App() {
             <div className="metadata-heading"><div><h3>Metadata</h3><p>{active.suggested ? "AI suggestions · review before saving" : "Current ID3 information"}</p></div>{active.suggested && <span className="review-badge">AI SUGGESTED</span>}</div>
             <div className="fields">{fields.map(([key, label]) => <label className={key === "comment" ? "field full" : "field"} key={key}><span>{label}</span>{key === "comment" ? <textarea value={activeTags[key]} onChange={e => edit(key, e.target.value)} rows={2}/> : <input value={activeTags[key]} onChange={e => edit(key, e.target.value)} placeholder="—"/>}</label>)}</div>
             <div className="lyrics-section">
-              <div className="metadata-heading"><div><h3>Lyrics</h3><p>Plain lyrics are embedded in ID3 USLT</p></div></div>
+              <div className="metadata-heading"><div><h3>Lyrics</h3><p>Plain lyrics are embedded in ID3 USLT</p></div><button className="button secondary" onClick={findLyrics} disabled={busy}><BookOpenText size={14}/> Find lyrics</button></div>
               <label className="field full"><span>Full lyrics (plain text)</span><textarea value={active.lyrics ?? ""} onChange={e => editLyrics("lyrics", e.target.value)} rows={5} placeholder="Paste the complete lyrics here..."/></label>
               <label className="field full"><span>Synced lyrics (LRC format)</span><textarea value={active.syncedLyrics ?? ""} onChange={e => editLyrics("syncedLyrics", e.target.value)} rows={6} placeholder={"[00:12.30]First line\n[00:16.50]Second line\n[00:20.00]Third line"}/></label>
               <small className="lyrics-hint">When saved, LRC timestamps are also embedded as ID3 SYLT and exported to a .lrc sidecar file.</small>
