@@ -101,7 +101,7 @@ export default function App() {
       const tags = active.suggested ?? active.tags;
       const candidates = await window.desktop.searchArtwork({ artist: tags.artist, album: tags.album, title: tags.title });
       updateTrack(active.path, { artworkCandidates: candidates, selectedArtwork: candidates[0]?.url });
-      if (!candidates.length) setNotice("Không tìm thấy ảnh bìa phù hợp trên iTunes Store.");
+      if (!candidates.length) setNotice("Không tìm thấy ảnh bìa phù hợp trên MusicBrainz/Cover Art Archive.");
     } catch (e) { setNotice(errorText(e)); }
     finally { setBusy(false); }
   };
