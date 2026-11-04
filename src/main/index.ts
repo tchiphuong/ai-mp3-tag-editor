@@ -53,8 +53,8 @@ ipcMain.handle("dialog:files", async () => {
   return result.canceled ? [] : result.filePaths;
 });
 
-function parseLrc(lrc: string): Array<{ text: string; timestamp: number }> {
-  const entries: Array<{ text: string; timestamp: number }> = [];
+function parseLrc(lrc: string): Array<{ text: string; timeStamp: number }> {
+  const entries: Array<{ text: string; timeStamp: number }> = [];
   for (const line of lrc.split(/\r?\n/)) {
     const match = line.match(/^\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\](.*)$/);
     if (!match) continue;
@@ -62,14 +62,14 @@ function parseLrc(lrc: string): Array<{ text: string; timestamp: number }> {
     const milliseconds = fraction.length === 1 ? Number(fraction) * 100 : fraction.length === 2 ? Number(fraction) * 10 : Number(fraction);
     const timestamp = (Number(match[1]) * 60 + Number(match[2])) * 1000 + milliseconds;
     const text = match[4].trim();
-    if (text) entries.push({ text, timestamp });
+    if (text) entries.push({ text, timeStamp: timestamp });
   }
   return entries.sort((a, b) => a.timestamp - b.timestamp);
 }
 
-function toLrc(entries: Array<{ text: string; timestamp: number }>): string {
-  return entries.map(({ text, timestamp }) => {
-    const total = Math.max(0, Math.floor(timestamp));
+function toLrc(entries: Array<{ text: string; timeStamp: number }>): string {
+  return entries.map(({ text, timeStamp: timestamp }) => {
+    const total = Math.max(0, Math.floor(timeStamp));
     const minutes = Math.floor(total / 60000);
     const seconds = Math.floor((total % 60000) / 1000);
     const centiseconds = Math.floor((total % 1000) / 10);
@@ -98,7 +98,7 @@ ipcMain.handle("library:read", async (_event, filePath: string) => {
   const common = metadata.common;
   const id3Tags = (id3.read(filePath) ?? {}) as unknown as {
     unsynchronisedLyrics?: { text?: string };
-    synchronisedLyrics?: Array<{ synchronisedText?: Array<{ text: string; timestamp: number }> }>;
+    synchronisedLyrics?: Array<{ synchronisedText?: Array<{ text: string; timeStamp: number }> }>;
   };
   const syncedEntries = id3Tags.synchronisedLyrics?.flatMap(frame => frame.synchronisedText ?? []) ?? [];
   return {
