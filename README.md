@@ -133,7 +133,7 @@ Lấy API Key tại [Google AI Studio](https://aistudio.google.com/apikey).
 - Khi **Analyze audio** tắt, ứng dụng chỉ gửi tên file và metadata hiện có để Gemini đề xuất thông tin.
 - Tìm ảnh bìa sử dụng MusicBrainz và Cover Art Archive; request tìm kiếm chứa thông tin Artist/Album. Ảnh được tải về khi người dùng chọn nhúng.
 - Gemini API Key được lưu mã hóa bằng Electron `safeStorage` trong dữ liệu ứng dụng Windows.
-- Backup được lưu cạnh file MP3 trong thư mục ẩn `.mp3-tag-editor-backups`.
+- Backup được lưu cạnh file MP3 trong thư mục `.mp3-tag-editor-backups` nằm cạnh file MP3.
 
 ## Giới hạn hiện tại
 
