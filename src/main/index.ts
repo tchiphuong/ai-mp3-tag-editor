@@ -1,12 +1,10 @@
 import { app, BrowserWindow, dialog, ipcMain, safeStorage } from "electron";
 import { join, basename, extname, dirname } from "node:path";
-import { createRequire } from "node:module";
 import { promises as fs } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { parseFile } from "music-metadata";
 import NodeID3 from "node-id3";
-const require = createRequire(import.meta.url);
-const id3 = require("node-id3") as typeof NodeID3;
+const id3 = NodeID3;
 const BACKUP_DIR = ".mp3-tag-editor-backups";
 const MAX_INLINE_BYTES = 14 * 1024 * 1024;
 const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"];
