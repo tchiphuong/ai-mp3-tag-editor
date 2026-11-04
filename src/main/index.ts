@@ -144,7 +144,7 @@ ipcMain.handle("artwork:search", async (_event, input: { artist: string; album: 
   const album = (input.album || input.title).trim();
   if (!artist && !album) throw new Error("Cần có Artist hoặc Album để tìm ảnh bìa.");
 
-  const escapeLucene = (value: string) => value.replace(/\\\\/g, "\\\\\\\\").replace(/"/g, '\\\\"');
+  const escapeLucene = (value: string) => value.replaceAll(String.fromCharCode(34), " ").trim();
   const terms = [album ? `release:"${escapeLucene(album)}"` : "", artist ? `artist:"${escapeLucene(artist)}"` : ""].filter(Boolean);
   const searchUrl = new URL("https://musicbrainz.org/ws/2/release/");
   searchUrl.searchParams.set("query", terms.join(" AND "));
@@ -193,7 +193,7 @@ ipcMain.handle("artwork:embed", async (_event, input: { path: string; imageDataU
   let mime: string;
   let imageBuffer: Buffer;
   if (input.imageDataUrl.startsWith("data:")) {
-    const match = input.imageDataUrl.match(/^data:(image\\/(?:jpeg|png));base64,([A-Za-z0-9+/=]+)$/);
+    const match = input.imageDataUrl.match(/^data:(image\/(?:jpeg|png));base64,([A-Za-z0-9+/=]+)$/);
     if (!match) throw new Error("Ảnh bìa phải là JPEG hoặc PNG hợp lệ.");
     mime = match[1];
     imageBuffer = Buffer.from(match[2], "base64");
