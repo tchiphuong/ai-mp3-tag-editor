@@ -231,7 +231,7 @@ export default function App() {
             <div className="lyrics-section">
               <div className="metadata-heading"><div><h3>Lyrics</h3><p>Plain lyrics are embedded in ID3 USLT</p></div></div>
               <label className="field full"><span>Full lyrics (plain text)</span><textarea value={active.lyrics ?? ""} onChange={e => editLyrics("lyrics", e.target.value)} rows={5} placeholder="Paste the complete lyrics here..."/></label>
-              <label className="field full"><span>Synced lyrics (LRC format)</span><textarea value={active.syncedLyrics ?? ""} onChange={e => editLyrics("syncedLyrics", e.target.value)} rows={6} placeholder={"[00:12.30]First line\\n[00:16.50]Second line\\n[00:20.00]Third line"}/></label>
+              <label className="field full"><span>Synced lyrics (LRC format)</span><textarea value={active.syncedLyrics ?? ""} onChange={e => editLyrics("syncedLyrics", e.target.value)} rows={6} placeholder={"[00:12.30]First line\n[00:16.50]Second line\n[00:20.00]Third line"}/></label>
               <small className="lyrics-hint">When saved, LRC timestamps are also embedded as ID3 SYLT and exported to a .lrc sidecar file.</small>
             </div>
             {active.error && <div className="error-text">{active.error}</div>}
