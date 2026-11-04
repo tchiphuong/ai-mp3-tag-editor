@@ -22,6 +22,8 @@
 - Hoặc chọn nhiều file MP3 riêng lẻ từ máy tính.
 - Đọc metadata ID3 hiện có: Title, Artist, Album, Album Artist, Genre, Year, Track, Composer và Comment.
 - Tìm kiếm nhanh trong danh sách bài hát.
+- Add nhiều thư mục nhạc vào Library; danh sách thư mục được lưu và tự quét lại khi mở ứng dụng.
+- Bỏ thư mục khỏi Library không xóa file nhạc trên ổ đĩa.
 
 ### AI metadata với Gemini
 
@@ -38,6 +40,13 @@
 - Preview ảnh trước khi nhúng.
 - Nhúng ảnh bìa vào ID3 APIC (front cover).
 - Đọc và hiển thị ảnh bìa đã có trong MP3.
+
+### Lyrics
+
+- Nhập và nhúng lời bài hát không đồng bộ vào ID3 USLT.
+- Nhập lời đồng bộ theo timestamp bằng định dạng LRC; ứng dụng ghi thêm ID3 SYLT.
+- Xuất file `.lrc` cùng tên, cạnh MP3 để các trình phát hỗ trợ sidecar lyrics có thể đọc.
+- Cả lời đầy đủ và lời đồng bộ được lưu cùng MP3; không tự tạo lời bài hát bằng AI.
 
 ### An toàn dữ liệu
 
@@ -56,6 +65,7 @@
 | ID3 writer | node-id3 |
 | AI | Google Gemini Interactions API |
 | Album artwork search | MusicBrainz API và Cover Art Archive |
+| Lyrics | ID3 USLT / SYLT + LRC sidecar |
 
 ## Yêu cầu
 
@@ -121,10 +131,13 @@ Lấy API Key tại [Google AI Studio](https://aistudio.google.com/apikey).
 4. Bật **Analyze audio** nếu muốn gửi nội dung âm thanh cho Gemini. Tắt tùy chọn này nếu chỉ muốn phân tích tên file và tag hiện có.
 5. Chọn **AI suggest** hoặc **AI fill all**.
 6. Kiểm tra và chỉnh sửa các trường metadata được đề xuất.
-7. Chọn **Save tags** để ghi ID3 vào MP3.
-8. Trong phần **Album artwork**, chọn **Find cover** để tìm ảnh từ MusicBrainz/Cover Art Archive hoặc **Choose image** để dùng ảnh local.
-9. Chọn ảnh phù hợp, xem preview và nhấn **Embed cover**.
-10. Dùng **Restore backup** nếu cần khôi phục file trước khi chỉnh sửa.
+7. Nhập lời bài hát ở phần **Lyrics**:
+   - **Full lyrics**: lời đầy đủ, không có timestamp.
+   - **Synced lyrics**: lời từng dòng theo timestamp, định dạng LRC, ví dụ `[00:12.30]First line`.
+8. Chọn **Save tags** để ghi metadata và lyrics vào MP3. Nếu có LRC, ứng dụng cũng xuất file `.lrc` cạnh MP3.
+9. Trong phần **Album artwork**, chọn **Find cover** để tìm ảnh từ MusicBrainz/Cover Art Archive hoặc **Choose image** để dùng ảnh local.
+10. Chọn ảnh phù hợp, xem preview và nhấn **Embed cover**.
+11. Dùng **Restore backup** nếu cần khôi phục file trước khi chỉnh sửa.
 
 ## Quyền riêng tư và dữ liệu
 
@@ -137,6 +150,7 @@ Lấy API Key tại [Google AI Studio](https://aistudio.google.com/apikey).
 
 ## Giới hạn hiện tại
 
+- Apple Music và Windows Media Player có thể khác nhau về cách hiển thị lyrics; ứng dụng ghi các frame ID3 chuẩn USLT/SYLT và xuất LRC để tăng khả năng tương thích, nhưng không thể cam kết mọi phiên bản trình phát đều hiển thị giống nhau.
 - Phân tích audio inline hiện giới hạn file dưới 14 MB để chừa dung lượng cho phần prompt và payload request. Hỗ trợ Files API cho file lớn sẽ được bổ sung sau.
 - Ảnh bìa tìm kiếm phụ thuộc kết quả MusicBrainz/Cover Art Archive; một số album hoặc bản phát hành khu vực có thể không có kết quả.
 - Gemini có thể đề xuất sai bài hát hoặc metadata. Luôn kiểm tra trước khi lưu.
