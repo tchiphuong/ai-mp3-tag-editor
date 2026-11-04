@@ -55,8 +55,8 @@ ipcMain.handle("dialog:files", async () => {
 
 function parseLrc(lrc: string): Array<{ text: string; timestamp: number }> {
   const entries: Array<{ text: string; timestamp: number }> = [];
-  for (const line of lrc.split(/\\r?\\n/)) {
-    const match = line.match(/^\\[(\\d{1,2}):(\\d{2})(?:[.:](\\d{1,3}))?\\](.*)$/);
+  for (const line of lrc.split(/\r?\n/)) {
+    const match = line.match(/^\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\](.*)$/);
     if (!match) continue;
     const fraction = match[3] ?? "0";
     const milliseconds = fraction.length === 1 ? Number(fraction) * 100 : fraction.length === 2 ? Number(fraction) * 10 : Number(fraction);
@@ -73,8 +73,8 @@ function toLrc(entries: Array<{ text: string; timestamp: number }>): string {
     const minutes = Math.floor(total / 60000);
     const seconds = Math.floor((total % 60000) / 1000);
     const centiseconds = Math.floor((total % 1000) / 10);
-    return `[${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(centiseconds).padStart(2, "0")}]${text}`;
-  }).join("\\n");
+    return \`[\${String(minutes).padStart(2, "0")}:\${String(seconds).padStart(2, "0")}.\${String(centiseconds).padStart(2, "0")}]\${text}\`;
+  }).join("\n");
 }
 
 async function scanMp3(folder: string): Promise<string[]> {
@@ -263,7 +263,7 @@ ipcMain.handle("tags:write", async (_event, payload: { path: string; tags: Track
 
   const tags = payload.tags;
   const syncedEntries = parseLrc(payload.syncedLyrics);
-  const plainLyrics = payload.lyrics.trim() || syncedEntries.map(item => item.text).join("\\n");
+  const plainLyrics = payload.lyrics.trim() || syncedEntries.map(item => item.text).join("\n");
   const result = id3.update({
     title: tags.title || undefined, artist: tags.artist || undefined,
     album: tags.album || undefined, performerInfo: tags.albumArtist || undefined,
@@ -282,12 +282,12 @@ ipcMain.handle("tags:write", async (_event, payload: { path: string; tags: Track
   }
   let lrcPath: string | undefined;
   if (payload.syncedLyrics.trim()) {
-    lrcPath = payload.path.replace(/\\.mp3$/i, ".lrc");
+    lrcPath = payload.path.replace(/\.mp3$/i, ".lrc");
     try {
       const previousLrc = await fs.readFile(lrcPath);
       await fs.writeFile(`${lrcPath}.${Date.now()}.bak`, previousLrc, { flag: "wx" });
     } catch { /* No previous sidecar file. */ }
-    await fs.writeFile(lrcPath, payload.syncedLyrics.trim() + "\\n", "utf8");
+    await fs.writeFile(lrcPath, payload.syncedLyrics.trim() + "\n", "utf8");
   }
   return { backupPath, lrcPath };
 });
