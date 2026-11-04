@@ -43,6 +43,7 @@
 
 ### Lyrics
 
+- Tìm lời bài hát tự động bằng LRCLIB theo Title, Artist, Album và thời lượng; không cần API key.
 - Nhập và nhúng lời bài hát không đồng bộ vào ID3 USLT.
 - Nhập lời đồng bộ theo timestamp bằng định dạng LRC; ứng dụng ghi thêm ID3 SYLT.
 - Xuất file `.lrc` cùng tên, cạnh MP3 để các trình phát hỗ trợ sidecar lyrics có thể đọc.
@@ -65,7 +66,7 @@
 | ID3 writer | node-id3 |
 | AI | Google Gemini Interactions API |
 | Album artwork search | MusicBrainz API và Cover Art Archive |
-| Lyrics | ID3 USLT / SYLT + LRC sidecar |
+| Lyrics | LRCLIB API + ID3 USLT / SYLT + LRC sidecar |
 
 ## Yêu cầu
 
@@ -131,25 +132,28 @@ Lấy API Key tại [Google AI Studio](https://aistudio.google.com/apikey).
 4. Bật **Analyze audio** nếu muốn gửi nội dung âm thanh cho Gemini. Tắt tùy chọn này nếu chỉ muốn phân tích tên file và tag hiện có.
 5. Chọn **AI suggest** hoặc **AI fill all**.
 6. Kiểm tra và chỉnh sửa các trường metadata được đề xuất.
-7. Nhập lời bài hát ở phần **Lyrics**:
+7. Trong phần **Lyrics**, chọn **Find lyrics** để tra cứu LRCLIB (nếu tìm thấy, ứng dụng điền cả lời thường và lời đồng bộ). Có thể tự sửa hoặc nhập lời thủ công.
+8. Nhập lời bài hát ở phần **Lyrics**:
    - **Full lyrics**: lời đầy đủ, không có timestamp.
    - **Synced lyrics**: lời từng dòng theo timestamp, định dạng LRC, ví dụ `[00:12.30]First line`.
-8. Chọn **Save tags** để ghi metadata và lyrics vào MP3. Nếu có LRC, ứng dụng cũng xuất file `.lrc` cạnh MP3.
-9. Trong phần **Album artwork**, chọn **Find cover** để tìm ảnh từ MusicBrainz/Cover Art Archive hoặc **Choose image** để dùng ảnh local.
-10. Chọn ảnh phù hợp, xem preview và nhấn **Embed cover**.
-11. Dùng **Restore backup** nếu cần khôi phục file trước khi chỉnh sửa.
+9. Chọn **Save tags** để ghi metadata và lyrics vào MP3. Nếu có LRC, ứng dụng cũng xuất file `.lrc` cạnh MP3.
+10. Trong phần **Album artwork**, chọn **Find cover** để tìm ảnh từ MusicBrainz/Cover Art Archive hoặc **Choose image** để dùng ảnh local.
+11. Chọn ảnh phù hợp, xem preview và nhấn **Embed cover**.
+12. Dùng **Restore backup** nếu cần khôi phục file trước khi chỉnh sửa.
 
 ## Quyền riêng tư và dữ liệu
 
 - MP3 được đọc và chỉnh sửa trực tiếp trên ổ đĩa local bằng Electron main process.
 - Khi **Analyze audio** được bật, dữ liệu audio được gửi tới Google Gemini API. Không có backend trung gian do dự án vận hành.
 - Khi **Analyze audio** tắt, ứng dụng chỉ gửi tên file và metadata hiện có để Gemini đề xuất thông tin.
-- Tìm ảnh bìa sử dụng MusicBrainz và Cover Art Archive; request tìm kiếm chứa thông tin Artist/Album. Ảnh được tải về khi người dùng chọn nhúng.
+- Tìm ảnh bìa sử dụng MusicBrainz và Cover Art Archive; request tìm kiếm chứa thông tin Artist/Album.
+- Tìm lyrics sử dụng LRCLIB; request chứa Title, Artist, Album và thời lượng bài hát. Không gửi file audio đến LRCLIB. Ảnh được tải về khi người dùng chọn nhúng.
 - Gemini API Key được lưu mã hóa bằng Electron `safeStorage` trong dữ liệu ứng dụng Windows.
 - Backup được lưu cạnh file MP3 trong thư mục `.mp3-tag-editor-backups` nằm cạnh file MP3.
 
 ## Giới hạn hiện tại
 
+- LRCLIB là nguồn lyrics cộng đồng; kết quả có thể không tồn tại hoặc không khớp bản thu. Hãy kiểm tra trước khi lưu.
 - Apple Music và Windows Media Player có thể khác nhau về cách hiển thị lyrics; ứng dụng ghi các frame ID3 chuẩn USLT/SYLT và xuất LRC để tăng khả năng tương thích, nhưng không thể cam kết mọi phiên bản trình phát đều hiển thị giống nhau.
 - Phân tích audio inline hiện giới hạn file dưới 14 MB để chừa dung lượng cho phần prompt và payload request. Hỗ trợ Files API cho file lớn sẽ được bổ sung sau.
 - Ảnh bìa tìm kiếm phụ thuộc kết quả MusicBrainz/Cover Art Archive; một số album hoặc bản phát hành khu vực có thể không có kết quả.
