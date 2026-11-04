@@ -77,15 +77,19 @@ export default function App() {
       if (!Array.isArray(saved)) return;
       setLibraryFolders(saved);
       (async () => {
+        const allPaths: string[] = [];
+        const unavailable: string[] = [];
         for (const path of saved) {
           try {
-            setFolder(path);
             const paths = await window.desktop.scanFolder(path);
-            await loadPaths(paths);
+            allPaths.push(...paths);
           } catch {
-            setNotice(`Không truy cập được thư mục: ${path}`);
+            unavailable.push(path);
           }
         }
+        if (saved[0]) setFolder(saved[0]);
+        await loadPaths(allPaths);
+        if (unavailable.length) setNotice(`Không truy cập được ${unavailable.length} thư mục đã lưu. Thư mục vẫn được giữ trong Library.`);
       })();
     } catch {
       localStorage.removeItem("music-library-folders");
