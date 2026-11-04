@@ -82,6 +82,11 @@ export default function App() {
     const source = active.suggested ?? active.tags;
     updateTrack(active.path, { suggested: { ...source, [key]: value } });
   };
+  const edit = (key: keyof Tags, value: string) => {
+    if (!active) return;
+    const source = active.suggested ?? active.tags;
+    updateTrack(active.path, { suggested: { ...source, [key]: value } });
+  };
   const saveSettings = async () => {
     try {
       await window.desktop.saveApiKey(apiKey);
