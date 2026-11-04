@@ -117,6 +117,35 @@ ipcMain.handle("library:read", async (_event, filePath: string) => {
   };
 });
 
+ipcMain.handle("lyrics:search", async (_event, input: { title: string; artist: string; album: string; duration: number }) => {
+  if (!input.title.trim() || !input.artist.trim()) {
+    throw new Error("Cần có Title và Artist trước khi tìm lời bài hát.");
+  }
+  const url = new URL("https://lrclib.net/api/get");
+  url.searchParams.set("track_name", input.title.trim());
+  url.searchParams.set("artist_name", input.artist.trim());
+  if (input.album.trim()) url.searchParams.set("album_name", input.album.trim());
+  if (input.duration > 0 && input.duration <= 3600) url.searchParams.set("duration", String(Math.round(input.duration)));
+
+  const response = await fetch(url, {
+    headers: { "User-Agent": "AI-MP3-Tag-Editor/0.1.0 (https://github.com/tchiphuong/ai-mp3-tag-editor)" }
+  });
+  if (response.status === 404) throw new Error("LRCLIB chưa có lời cho bài hát này.");
+  if (response.status === 429) {
+    const retry = response.headers.get("Retry-After");
+    throw new Error(`LRCLIB đang giới hạn truy cập. Thử lại sau ${retry ?? "một lát"} giây.`);
+  }
+  if (!response.ok) throw new Error(`Không tìm được lyrics (LRCLIB HTTP ${response.status}).`);
+  const result = await response.json() as { plainLyrics?: string | null; syncedLyrics?: string | null; instrumental?: boolean };
+  if (result.instrumental || (!result.plainLyrics && !result.syncedLyrics)) {
+    throw new Error("Bản ghi này không có lời bài hát.");
+  }
+  return {
+    lyrics: result.plainLyrics ?? "",
+    syncedLyrics: result.syncedLyrics ?? ""
+  };
+});
+
 ipcMain.handle("settings:get", async () => {
   const path = join(app.getPath("userData"), "gemini-key.bin");
   try { await fs.access(path); return { configured: true }; }
