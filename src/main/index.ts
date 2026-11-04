@@ -4,9 +4,6 @@ import { promises as fs } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { parseFile } from "music-metadata";
 import NodeID3 from "node-id3";
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
 const id3 = require("node-id3") as typeof NodeID3;
 const BACKUP_DIR = ".mp3-tag-editor-backups";
 const MAX_INLINE_BYTES = 14 * 1024 * 1024;
@@ -29,12 +26,12 @@ function createWindow() {
     backgroundColor: "#0b1020",
     title: "AI MP3 Tag Editor",
     webPreferences: {
-      preload: join(import.meta.dirname, "../preload/index.js"),
+      preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true, nodeIntegration: false, sandbox: false
     }
   });
   if (process.env.ELECTRON_RENDERER_URL) mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
-  else mainWindow.loadFile(join(import.meta.dirname, "../renderer/index.html"));
+  else mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
 }
 
 app.whenReady().then(() => {
